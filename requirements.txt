@@ -4,3 +4,4 @@ numpy
 speechrecognition
 twilio
 ffmpeg-python
+scikit-learn
