@@ -1,6 +1,6 @@
 # Crime Detection Using CCTV Footage & Audio Analysis 
 
- 📌 Project Overview
+## 📌 Project Overview
 The **Crime Detection Using CCTV Footage & Audio Analysis** project is an AI-driven system that analyzes CCTV footage and audio recordings to detect and prevent various types of crimes. Using deep learning techniques, this project processes video and audio feeds to identify suspicious activities, detect anomalies, and provide real-time alerts. Additionally, it integrates legal references for each detected crime, making it useful for law enforcement and legal professionals.
 
 ## 🚀 Features
