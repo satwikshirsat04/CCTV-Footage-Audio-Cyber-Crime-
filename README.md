@@ -67,5 +67,5 @@ Contributions are welcome! Follow these steps to contribute:
 ## 📞 Contact
 For queries or suggestions, contact:
 📧 Email: satwikshirsat04@gmail.com  
-🌐 GitHub: [Your GitHub Profile](https://github.com/satwikshirsat04)
+🌐 GitHub: [Satwik Shirsat](https://github.com/satwikshirsat04)
 
