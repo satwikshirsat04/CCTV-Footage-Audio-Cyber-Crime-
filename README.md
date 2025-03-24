@@ -11,18 +11,6 @@ The **Crime Detection Using CCTV Footage & Audio Analysis** project is an AI-dri
 - **Legal Integration**: Maps detected crimes to relevant laws and legal provisions, aiding lawyers and law enforcement officers.
 - **Secure & Scalable**: Ensures data security while allowing scalability for large-scale monitoring.
 
-## 📁 Project Structure
-```
-CCTV-Footage-Audio-Cyber-Crime/
-│-- data/                # Raw video and audio datasets
-│-- models/              # Pre-trained deep learning models
-│-- scripts/             # Python scripts for video/audio processing
-│-- logs/                # System logs and alerts
-│-- laws/                # Legal references for detected crimes
-│-- requirements.txt     # Dependencies
-│-- README.md            # Project Documentation
-│-- main.py              # Main execution file
-```
 
 ## 🛠️ Installation
 1. **Clone the Repository**
@@ -33,7 +21,7 @@ CCTV-Footage-Audio-Cyber-Crime/
 2. **Create a Virtual Environment (Optional but Recommended)**
    ```bash
    python -m venv venv
-   source venv/bin/activate  # On Windows use: venv\Scripts\activate
+   source venv/bin/activate 
    ```
 3. **Install Dependencies**
    ```bash
@@ -41,13 +29,13 @@ CCTV-Footage-Audio-Cyber-Crime/
    ```
 4. **Run the Project**
    ```bash
-   python main.py
+   python app.py
    ```
 
 ## 📊 Technologies Used
 - **Python**
 - **OpenCV** (Computer Vision for video processing)
-- **Librosa** (Audio processing)
+- **OpenAI Whisper** (Audio processing)
 - **TensorFlow / PyTorch** (Deep learning models)
 - **Scikit-Learn** (ML models)
 - **Flask / FastAPI** (For API integration)
@@ -76,11 +64,8 @@ Contributions are welcome! Follow these steps to contribute:
 4. Push to your branch.
 5. Open a Pull Request.
 
-## 📜 License
-This project is licensed under the MIT License. See `LICENSE` for details.
-
 ## 📞 Contact
 For queries or suggestions, contact:
-📧 Email: your.email@example.com  
-🌐 GitHub: [Your GitHub Profile](https://github.com/your-username)
+📧 Email: satwikshirsat04@gmail.com  
+🌐 GitHub: [Your GitHub Profile](https://github.com/satwikshirsat04)
 
