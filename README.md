@@ -15,7 +15,7 @@ The **Crime Detection Using CCTV Footage & Audio Analysis** project is an AI-dri
 ## 🛠️ Installation
 1. **Clone the Repository**
    ```bash
-   git clone https://github.com/your-username/CCTV-Footage-Audio-Cyber-Crime.git
+   git clone https://github.com/satwikshirsat04/CCTV-Footage-Audio-Cyber-Crime-.git
    cd CCTV-Footage-Audio-Cyber-Crime
    ```
 2. **Create a Virtual Environment (Optional but Recommended)**
