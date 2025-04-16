@@ -1,16 +1,21 @@
 import streamlit as st
 import base64
-import whisper
 import pickle
 import numpy as np
 import speech_recognition as sr
 from twilio.rest import Client
+from dotenv import load_dotenv
+import os
 
-# Twilio Credentials
-TWILIO_SID = "AC6a78fa46ae875a666c71d6c49cc6c58e"
-TWILIO_AUTH_TOKEN = "348b9b06f80fd94a9697e18e2afff3e9"
-TWILIO_PHONE = "+19039123996"
-ADMIN_PHONE = "+917498238505"
+
+# Twilio Credentials (Make sure these are secure in real deployment)
+load_dotenv()
+
+TWILIO_SID = os.getenv("TWILIO_SID")
+TWILIO_API_KEY = os.getenv("TWILIO_API_KEY")
+TWILIO_API_SECRET = os.getenv("TWILIO_API_SECRET")
+TWILIO_PHONE = os.getenv("TWILIO_PHONE")
+ADMIN_PHONE = os.getenv("ADMIN_PHONE")
 
 # Load AI Model
 @st.cache_resource
@@ -21,25 +26,44 @@ def load_model():
 
 model, vectorizer = load_model()
 
-# Function to transcribe audio
-def transcribe_audio(audio_file):
-    model = whisper.load_model("base")
-    result = model.transcribe(audio_file)
-    return result["text"]
+# Transcribe audio using Google Speech Recognition
+def transcribe_audio(audio_file_path):
+    recognizer = sr.Recognizer()
+    with sr.AudioFile(audio_file_path) as source:
+        audio = recognizer.record(source)
+    try:
+        return recognizer.recognize_google(audio)
+    except sr.UnknownValueError:
+        return "Could not understand audio."
+    except sr.RequestError as e:
+        return f"Request error: {e}"
 
-# Function to detect threats
+# Detect cyber threat from transcribed text
 def detect_threat(text):
     input_text_vectorized = vectorizer.transform([text])
     prediction = model.predict(input_text_vectorized)
-    return "Cyber Threat Detected!" if prediction[0] == 1 else "No Threat Detected."
+    return "🚨Cyber Threat Detected!" if prediction[0] == 1 else "No Threat Detected."
 
-# Function to send SMS alert
+# Send SMS alert via Twilio
 def send_alert(message):
-    client = Client(TWILIO_SID, TWILIO_AUTH_TOKEN)
-    client.messages.create(body=message, from_=TWILIO_PHONE, to=ADMIN_PHONE)
-    st.warning("Alert Sent!")
+    try:
+        client = Client(TWILIO_API_KEY, TWILIO_API_SECRET, TWILIO_SID)
+        alert_message = (
+            "🚨 THREAT ALERT 🚨\n"
+            "-----------------------------------\n"
+            f"{message}\n"
+            "-----------------------------------\n"
+            "⚠️ Please take immediate action."
+        )
+        client.messages.create(body=alert_message, from_=TWILIO_PHONE, to=ADMIN_PHONE)
+        st.warning("🚨 Alert Sent via SMS!")
+    except Exception as e:
+        st.error(f"Failed to send alert: {e}")
 
-# Function to capture audio
+
+
+
+# Capture live audio from microphone
 def record_audio():
     recognizer = sr.Recognizer()
     with sr.Microphone() as source:
@@ -47,12 +71,12 @@ def record_audio():
         audio = recognizer.listen(source)
     return audio
 
-# Function to encode image to Base64
+# Encode background image to Base64
 def get_base64_of_image(file_path):
     with open(file_path, "rb") as img_file:
         return base64.b64encode(img_file.read()).decode()
 
-# Function to set background image from local file
+# Set background image from local file
 def set_background_local(image_path):
     base64_str = get_base64_of_image(image_path)
     page_bg = f"""
@@ -62,16 +86,15 @@ def set_background_local(image_path):
         background-size: cover;
         background-position: center;
         background-repeat: no-repeat;
-        # background: rgba(0, 0, 0, 10.5);
     }}
     </style>
     """
     st.markdown(page_bg, unsafe_allow_html=True)
 
-# ✅ Set background from local image file
+# Set background
 set_background_local("cyber.jpeg")  
 
-# Streamlit App UI
+# Streamlit UI
 st.title("🔊 AI-Powered Cyber Threat Detection")
 st.markdown("Speak into the microphone to analyze speech for threats.")
 
@@ -89,7 +112,6 @@ if st.button("🎤 Start Recording"):
     threat_status = detect_threat(transcribed_text)
     st.subheader("Threat Status:")
 
-    # ✅ Fixed issue by using proper if-else block
     if "Threat" in threat_status:
         st.warning(threat_status)
     else:
