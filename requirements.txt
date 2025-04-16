@@ -5,5 +5,5 @@ speechrecognition
 twilio
 ffmpeg-python
 scikit-learn
-pyaudio
+PyAudio==0.2.13
 python-dotenv
