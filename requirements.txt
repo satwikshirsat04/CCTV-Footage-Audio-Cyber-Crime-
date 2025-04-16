@@ -6,3 +6,4 @@ twilio
 ffmpeg-python
 scikit-learn
 pyaudio
+python-dotenv
