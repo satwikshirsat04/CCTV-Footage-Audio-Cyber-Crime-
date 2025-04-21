@@ -1,6 +1,4 @@
-Here's a **professional `README.md`** for your GitHub repository, formatted in Markdown with clear sections for usability and citations:
 
-```markdown
 # 🚨 Multimodal Crime Detection System
 
 **A YOLOv8 and Audio Analysis Pipeline for Automated CCTV Surveillance**  
