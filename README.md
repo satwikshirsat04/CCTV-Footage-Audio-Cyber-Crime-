@@ -111,20 +111,12 @@ This work (in process........)
 
 ## 📜 License
 MIT License. See [LICENSE](LICENSE) for details.
-```
 
----
 
 ### **Key Highlights**:
 1. **Visual Hierarchy** - Emojis and headers organize content intuitively  
 2. **Code Blocks** - Ready-to-run commands for easy setup  
 3. **Results Table** - Clear performance metrics  
 4. **Academic Citations** - Professional BibTeX format  
-5. **Mobile-Friendly** - Clean Markdown rendering on GitHub  
+5. **Mobile-Friendly** - Clean Markdown rendering on GitHub   
 
-**To add**:
-1. Replace `yourusername` with your GitHub handle  
-2. Upload the `flowchart.png` to `/docs/diagrams/`  
-3. Add your paper PDF when ready  
-
-Need a **more detailed technical writeup** or **project video demo script**? Let me know! 🎥
