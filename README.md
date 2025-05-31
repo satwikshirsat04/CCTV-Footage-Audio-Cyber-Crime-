@@ -108,7 +108,7 @@ This work (in process........)
 
 ## 🤝 Contributors
 - [Satwik Shirsat](https://github.com/satwikshirsat04)  
-- [Vrushabh Salunke](https://github.com/Vrushabhsalunke)  
+- [Vrushabh Salunke](https://github.com/Vrushabh6454)  
 
 ---
 
