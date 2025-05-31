@@ -89,8 +89,7 @@ python src/inference/detect_crimes.py --video inputs/cctv.mp4 --audio inputs/aud
 
 ## 📝 Research Paper
 This work (in process........)  
-**"Multimodal Crime Detection Using YOLOv8 and Audio Analysis"** ([PDF](docs/paper.pdf))  
-*Submitted to IEEE AVSS 2024*  
+
 
 **Citations**:
 ```bibtex
@@ -105,12 +104,9 @@ This work (in process........)
 
 ## 🤝 Contributors
 - [Satwik Shirsat](https://github.com/satwikshirsat04)  
-- [Vrushabh Salunke](https://github.com/vrushabhsalunke)  
+- [Vrushabh Salunke](https://github.com/Vrushabhsalunke)  
 
 ---
-
-## 📜 License
-MIT License. See [LICENSE](LICENSE) for details.
 
 
 ### **Key Highlights**:
