@@ -4,7 +4,7 @@
 **A YOLOv8 and Audio Analysis Pipeline for Automated CCTV Surveillance**  
 *Final Year BTech Project (AI & Data Science)*  
 
-![Project Pipeline](docs/diagrams/flowchart.png)  
+![Project Pipeline](/flowchart.png)  
 *Figure: System Architecture of Multimodal Crime Detection*
 
 ---
