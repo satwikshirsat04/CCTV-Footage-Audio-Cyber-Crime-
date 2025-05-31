@@ -13,7 +13,9 @@
 This project implements a **multimodal AI system** that detects crimes in CCTV footage by combining:
 - **YOLOv8** for visual detection (fighting, weapons, burglary)  
 - **CNN-based Audio Analysis** for anomalous sounds (gunshots, screams)  
-- **Late/Early Fusion** strategies to improve accuracy  
+- **Late/Early Fusion** strategies to improve accuracy
+- ![Project Pipeline](/flowchart2.png)  
+*Figure: Real-Time Processing*
 
 **Key Features**:
 ✅ Real-time crime detection at **18 FPS** on edge devices  
