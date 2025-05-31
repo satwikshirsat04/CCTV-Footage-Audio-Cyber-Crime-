@@ -3,6 +3,7 @@
 
 **A YOLOv8 and Audio Analysis Pipeline for Automated CCTV Surveillance**  
 *Final Year BTech Project (AI & Data Science)*  
+<h2>Flowchart :</h2>
 
 ![Project Pipeline](/flowchart.png)  
 *Figure: System Architecture of Multimodal Crime Detection*
@@ -14,6 +15,7 @@ This project implements a **multimodal AI system** that detects crimes in CCTV f
 - **YOLOv8** for visual detection (fighting, weapons, burglary)  
 - **CNN-based Audio Analysis** for anomalous sounds (gunshots, screams)  
 - **Late/Early Fusion** strategies to improve accuracy
+- <h2>Real-Time Processing</h2>
 - ![Project Pipeline](/flowchart2.png)  
 *Figure: Real-Time Processing*
 
