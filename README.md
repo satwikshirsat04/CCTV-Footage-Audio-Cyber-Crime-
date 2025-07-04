@@ -82,14 +82,6 @@ python src/inference/detect_crimes.py --video inputs/cctv.mp4 --audio inputs/aud
 
 ---
 
-## 📊 Results
-| Model               | mAP@0.5 | FPS (Jetson Nano) |
-|---------------------|---------|-------------------|
-| YOLOv8-only         | 0.77    | 32                |
-| YOLOv8 + Late Fusion| 0.85    | 18                |
-| YOLOv8 + Early Fusion| **0.89**| 14                |
-
----
 
 ## 📝 Research Paper
 This work (in process........)  
