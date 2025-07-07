@@ -5,8 +5,13 @@
 *Final Year BTech Project (AI & Data Science)*  
 <h2>Flowchart :</h2>
 
-![Project Pipeline](/flowchart.png)  
+![Project Pipeline](/cctv_v1.drawio.svg) 
 *Figure: System Architecture of Multimodal Crime Detection*
+
+---
+
+![Project Pipeline](/flowchart.png)  
+*Figure: Complete System Architecture of Multimodal Crime Detection*
 
 ---
 
