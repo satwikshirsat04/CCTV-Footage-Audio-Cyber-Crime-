@@ -7,7 +7,6 @@ from transformers import pipeline
 
 app = Flask(__name__, static_folder='static')
 
-# Load environment variables and models
 load_dotenv()
 model = pickle.load(open("cctv_audio_model.pkl", "rb"))
 vectorizer = pickle.load(open("vectorizer.pkl", "rb"))
@@ -25,12 +24,10 @@ def video():
 @app.route('/analyze', methods=['POST'])
 def analyze():
     try:
-        # Save the uploaded audio file
         audio_file = request.files['audio']
         audio_path = "uploaded_audio.wav"
         audio_file.save(audio_path)
 
-        # Transcribe the audio using Hugging Face's Whisper model
         transcription = whisper_pipe(audio_path)['text']
         print(f"Transcription: {transcription}")
 
@@ -38,11 +35,9 @@ def analyze():
         input_text_vectorized = vectorizer.transform([transcription])
         is_threat = model.predict(input_text_vectorized)[0] == 1
 
-        # Send alert if a threat is detected
         if is_threat:
             send_twilio_alert(transcription)
 
-        # Convert the boolean `is_threat` to an integer
         return jsonify({
             'transcription': transcription,
             'is_threat': int(is_threat),  # Convert to integer (1 or 0)
