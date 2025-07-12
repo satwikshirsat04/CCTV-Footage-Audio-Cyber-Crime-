@@ -58,10 +58,3 @@ This work (in process........)
 ---
 
 
-### **Key Highlights**:
-1. **Visual Hierarchy** - Emojis and headers organize content intuitively  
-2. **Code Blocks** - Ready-to-run commands for easy setup  
-3. **Results Table** - Clear performance metrics  
-4. **Academic Citations** - Professional BibTeX format  
-5. **Mobile-Friendly** - Clean Markdown rendering on GitHub   
-
