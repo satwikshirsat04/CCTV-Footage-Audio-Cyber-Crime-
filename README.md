@@ -15,7 +15,8 @@
 ## 📌 Overview
 This project implements a **multimodal AI system** that detects crimes in CCTV footage by combining:
 - **YOLOv8** for visual detection (fighting, weapons, burglary)  
-- **CNN-based Audio Analysis** for anomalous sounds (gunshots, screams)  
+- **CNN-based Audio Analysis** for anomalous sounds (gunshots, screams)
+- **NLP- SPEECH Model** for Detecting Criminal Vocals from Public voice
 - **Late/Early Fusion** strategies to improve accuracy
 - <h2>Real-Time Processing</h2>
 - ![Project Pipeline](/flowchart2.png)  
@@ -47,14 +48,6 @@ pip install -r requirements.txt
 This work (in process........)  
 
 
-**Citations**:
-```bibtex
-@article{ucfcrime,
-  title={UCF-Crime: A Large-Scale Dataset for Crime Detection in Surveillance Videos},
-  author={Soomro, Khurram and Zamir, Amir Roshan},
-  year={2018}
-}
-```
 
 ---
 
