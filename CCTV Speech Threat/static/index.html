@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cyber Threat Detector</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+
+<div class="container">
+    <h1>Cyber Threat Detection</h1>
+    <p class="description">Record audio to analyze for potential security threats in spoken content</p>
+
+    <div class="visualizer" id="visualizer"></div>
+
+    <div class="status-container">
+        <p class="status" id="status">Ready to record. Click the microphone button to start.</p>
+    </div>
+
+    <div class="button-group">
+        <button id="recordButton">
+            <span class="icon">🎤</span>
+            <span class="text">Start Recording</span>
+        </button>
+        <button id="stopButton" disabled>
+            <span class="icon">⏹</span>
+            <span class="text">Stop & Analyze</span>
+        </button>
+    </div>
+
+    <div class="results" id="results">
+        <h2>Analysis Results</h2>
+
+        <div class="transcription" id="transcription">
+            <h3>Transcribed Text:</h3>
+            <p id="transcriptionText">Loading...</p>
+        </div>
+
+        <div class="threat-indicator" id="threatResult">
+            Analyzing threat level...
+        </div>
+    </div>
+</div>
+
+<script src="/static/js/script.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/siriwave/dist/siriwave.min.js"></script>
+
+
+</body>
+</html>
