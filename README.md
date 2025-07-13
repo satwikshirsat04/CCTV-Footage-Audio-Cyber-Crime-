@@ -19,7 +19,7 @@ This project implements a **multimodal AI system** that detects crimes in CCTV f
 - **NLP- SPEECH Model** for Detecting Criminal Vocals from Public voice
 - **Late/Early Fusion** strategies to improve accuracy
 - <h2>Real-Time Processing</h2>
-- ![Project Pipeline](/flowchart2.png)  
+- ![Project Pipeline](/RTP.svg)  
 *Figure: Real-Time Processing*
  
 
