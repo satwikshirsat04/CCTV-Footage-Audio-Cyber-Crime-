@@ -36,6 +36,11 @@ This project implements a **multimodal AI system** that detects crimes in CCTV f
 *Figure: Gun Shot CNN Processing with SPECTROGRAM TECHNIQUE*
 
 ---
+![SPECTROGRAM](/CCTV%20Sound%20Threat/spectrogram%20dataset/bomb/bomb1.png)  
+
+*Figure: Bomb Attack CNN Processing with SPECTROGRAM TECHNIQUE*
+
+---
 ## 🛠️ Installation
 ```bash
 # Clone repository
