@@ -19,16 +19,27 @@ This project implements a **multimodal AI system** that detects crimes in CCTV f
 - **NLP- SPEECH Model** for Detecting Criminal Vocals from Public voice
 - **Late/Early Fusion** strategies to improve accuracy
 - <h2>Real-Time Processing</h2>
-- ![Project Pipeline](/RTP.svg)  
+![Project Pipeline](/RTP.svg)  
 *Figure: Real-Time Processing*
  
 
 ---
 
+## SOUND EFFECT DETECTION MODEL TRAINING:
+![SPECTROGRAM](/CCTV%20Sound%20Threat/notebooks/spectrogram_crash1.png)  
+
+*Figure: Car Accident Crash CNN Processing with SPECTROGRAM TECHNIQUE*
+
+---
+![SPECTROGRAM](/CCTV%20Sound%20Threat/notebooks/spectrogram_gun1.png)  
+
+*Figure: Gun Shot CNN Processing with SPECTROGRAM TECHNIQUE*
+
+---
 ## 🛠️ Installation
 ```bash
 # Clone repository
-git clone https://github.com/yourusername/multimodal-crime-detection.git
+git clone https://github.com/satwikshirsat04/multimodal-crime-detection.git
 cd multimodal-crime-detection
 
 # Install dependencies
@@ -36,8 +47,8 @@ pip install -r requirements.txt
 ```
 
 **Hardware Requirements**:
-- NVIDIA GPU (for training) / Jetson Nano (for deployment)  
-- Minimum 16GB RAM (for dataset processing)  
+- NVIDIA GPU MIN 4GB VRAM (for training) - USE GOOGLE COLAB
+- Minimum 8 GB RAM (for dataset processing)  
 
 
 ---
@@ -46,7 +57,6 @@ pip install -r requirements.txt
 
 ## 📝 Research Paper
 This work (in process........)  
-
 
 
 ---
