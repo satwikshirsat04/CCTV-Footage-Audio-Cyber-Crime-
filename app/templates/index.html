@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multimodal Crime Detection System</title>
+    <link rel="stylesheet" href="../static/css/styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <nav class="sidebar">
+            <h1>Multimodal Crime Detection System</h1>
+            <ul>
+                <li class="active"><i class="fas fa-home"></i> Home</li>
+                <li><i class="fas fa-video"></i> Live Feed</li>
+                <li><i class="fas fa-clipboard-list"></i> Logs</li>
+                <li><i class="fas fa-cog"></i> Settings</li>
+                <li id="theme-toggle"><i class="fas fa-moon"></i> Dark Mode</li>
+            </ul>
+        </nav>
+
+        <main class="content">
+            <section class="live-feeds">
+                <h2>Live Camera Feeds</h2>
+                <div class="feed-container">
+                    <div class="feed-box">
+                        <div class="feed-header">
+                            <span>Camera 1 - Parking Lot</span>
+                            <span class="status danger">THREAT DETECTED</span>
+                        </div>
+                        <video id="feed1" autoplay loop muted>
+                            <source src="{{ url_for('static', filename='videos/feed1.mp4') }}" type="video/mp4">
+                        </video>
+                        <div class="feed-footer">3:17 PM</div>
+                    </div>
+
+                    <div class="feed-box">
+                        <div class="feed-header">
+                            <span>Camera 2 - Main Entrance</span>
+                            <span class="status safe">MONITORING</span>
+                        </div>
+                        <video id="feed2" autoplay loop muted>
+                            <source src="{{ url_for('static', filename='videos/feed2.mp4') }}" type="video/mp4">
+                        </video>
+                        <div class="feed-footer">3:17 PM</div>
+                    </div>
+
+                    <div class="feed-box">
+                        <div class="feed-header">
+                            <span>Camera 3 - Back Alley</span>
+                            <span class="status safe">MONITORING</span>
+                        </div>
+                        <video id="feed3" autoplay loop muted>
+                            <source src="{{ url_for('static', filename='videos/feed3.mp4') }}" type="video/mp4">
+                        </video>
+                        <div class="feed-footer">3:17 PM</div>
+                    </div>
+
+                    <div class="feed-box">
+                        <div class="feed-header">
+                            <span>Camera 4 - Lobby</span>
+                            <span class="status safe">MONITORING</span>
+                        </div>
+                        <video id="feed4" autoplay loop muted>
+                            <source src="{{ url_for('static', filename='videos/feed4.mp4') }}" type="video/mp4">
+                        </video>
+                        <div class="feed-footer">3:17 PM</div>
+                    </div>
+                
+                    <div class="feed-box">
+                        <div class="feed-header">
+                            <span>Camera 5 - Staircase</span>
+                            <span class="status safe">MONITORING</span>
+                        </div>
+                        <video id="feed5" autoplay loop muted>
+                            <source src="{{ url_for('static', filename='videos/feed5.mp4') }}" type="video/mp4">
+                        </video>
+                        <div class="feed-footer">3:17 PM</div>
+                    </div>
+                
+                    <div class="feed-box">
+                        <div class="feed-header">
+                            <span>Camera 6 - Roof</span>
+                            <span class="status safe">MONITORING</span>
+                        </div>
+                        <video id="feed6" autoplay loop muted>
+                            <source src="{{ url_for('static', filename='videos/feed6.mp4') }}" type="video/mp4">
+                        </video>
+                        <div class="feed-footer">3:17 PM</div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="threats-overview">
+                <h2>Threats Overview</h2>
+                <div class="threats-container">
+                    <div class="threat-card">
+                        <div class="threat-header">
+                            <span class="status safe">MONITORING</span>
+                        </div>
+                        <div class="threat-content">
+                            <p>All systems operational</p>
+                            <button class="btn">View Alerts</button>
+                        </div>
+                    </div>
+                    <div class="threat-card danger">
+                        <div class="threat-header">
+                            <span class="status danger">ALERT</span>
+                        </div>
+                        <div class="threat-content">
+                            <p>Potential threat detected in Parking Lot</p>
+                            <button class="btn">View Details</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+</html>

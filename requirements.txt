@@ -7,3 +7,10 @@ ffmpeg-python
 scikit-learn
 PyAudio==0.2.13
 python-dotenv
+
+# Additional requirements for the multimodal backend
+librosa
+soundfile
+matplotlib
+Pillow
+tensorflow
