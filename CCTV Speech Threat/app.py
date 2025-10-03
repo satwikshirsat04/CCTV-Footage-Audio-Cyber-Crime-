@@ -8,8 +8,8 @@ from transformers import pipeline
 app = Flask(__name__, static_folder='static')
 
 load_dotenv()
-model = pickle.load(open("cctv_audio_model.pkl", "rb"))
-vectorizer = pickle.load(open("vectorizer.pkl", "rb"))
+model = pickle.load(open("CCTV Speech Threat/cctv_audio_model.pkl", "rb"))
+vectorizer = pickle.load(open("CCTV Speech Threat/vectorizer.pkl", "rb"))
 whisper_pipe = pipeline("automatic-speech-recognition", model="openai/whisper-tiny.en")
 
 @app.route('/')
