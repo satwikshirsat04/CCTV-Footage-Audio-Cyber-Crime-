@@ -44,8 +44,8 @@ This project implements a **multimodal AI system** that detects crimes in CCTV f
 ## 🛠️ Installation
 ```bash
 # Clone repository
-git clone https://github.com/satwikshirsat04/multimodal-crime-detection.git
-cd multimodal-crime-detection
+git clone https://github.com/satwikshirsat04/CCTV-Footage-Audio-Cyber-Crime-.git
+
 
 # Install dependencies
 pip install -r requirements.txt
