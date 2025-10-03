@@ -27,20 +27,25 @@ This project implements a **multimodal AI system** that detects crimes in CCTV f
 
 ## SOUND EFFECT DETECTION MODEL TRAINING:
 ![SPECTROGRAM](/CCTV%20Sound%20Threat/notebooks/spectrogram_crash1.png)  
-
 *Figure: Car Accident Crash CNN Processing with SPECTROGRAM TECHNIQUE*
 
 ---
-![SPECTROGRAM](/CCTV%20Sound%20Threat/notebooks/spectrogram_gun1.png)  
-
+![SPECTROGRAM](/CCTV%20Sound%20Threat/notebooks/spectrogram_gun1.png)
 *Figure: Gun Shot CNN Processing with SPECTROGRAM TECHNIQUE*
 
 ---
 ![SPECTROGRAM](/CCTV%20Sound%20Threat/spectrogram%20dataset/bomb/bomb1.png)  
-
 *Figure: Bomb Attack CNN Processing with SPECTROGRAM TECHNIQUE*
 
 ---
+
+## SOUND EFFECT DETECTION MODEL TRAINING:
+![SPEECH MODEL](/CCTV%20Speech%20Threat/assets/cyber-threat.png)  
+*Figure: Cyber Threat Detected Live Example*
+
+![ALERT SYSTEM TWILIO](/CCTV%20Speech%20Threat/assets/Twilio%20Alert.jpg)  
+*Figure: Cyber Threat Detected Twilio Alert System*
+
 ## 🛠️ Installation
 ```bash
 # Clone repository
