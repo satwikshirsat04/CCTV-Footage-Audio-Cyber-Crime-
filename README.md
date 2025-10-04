@@ -24,6 +24,9 @@ This project implements a **multimodal AI system** that detects crimes in CCTV f
  
 
 ---
+## Setup Webpage Screenshot:
+![SPECTROGRAM](/app/assets/demo.jpg)  
+*Figure: Threat v/s No-Threat detected in each video samples*
 
 ## SOUND EFFECT DETECTION MODEL TRAINING:
 ![SPECTROGRAM](/CCTV%20Sound%20Threat/notebooks/spectrogram_crash1.png)  
