@@ -7,6 +7,8 @@ import torch
 import librosa
 import ffmpeg
 import tensorflow as tf
+import soundfile as sf
+
 
 from transformers import (
     pipeline,
@@ -200,18 +202,30 @@ def predict_speech(audio_path):
     if whisper_pipe is None or speech_model is None:
         return "", False
 
-    # 🔥 Load max 25 seconds only
-    y, sr = librosa.load(audio_path, sr=16000, duration=25)
+    try:
+        # Load only first 25 seconds (prevents Whisper crash)
+        y, sr = librosa.load(audio_path, sr=16000, duration=25)
 
-    tmp_wav = audio_path.replace(".wav", "_short.wav")
-    librosa.output.write_wav(tmp_wav, y, sr)
+        tmp_wav = audio_path.replace(".wav", "_short.wav")
 
-    text = whisper_pipe(tmp_wav)["text"]
+        # ✅ Correct way (librosa.output is removed)
+        sf.write(tmp_wav, y, sr)
 
-    vec = vectorizer.transform([text])
-    pred = speech_model.predict(vec)[0]
+        result = whisper_pipe(tmp_wav)
+        text = result.get("text", "").strip()
 
-    return text, bool(pred)
+        if not text:
+            return "", False
+
+        vec = vectorizer.transform([text])
+        pred = speech_model.predict(vec)[0]
+
+        return text, bool(pred)
+
+    except Exception as e:
+        print("⚠️ Speech analysis failed:", e)
+        return "", False
+
 
 
 # ==================================================
