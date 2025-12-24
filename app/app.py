@@ -270,10 +270,13 @@ def analyze_video():
 # ==================================================
 
 if __name__ == "__main__":
-    print("\n🚀 Server running")
+    port = int(os.environ.get("PORT", 5000))
+
+    print(f"\n🚀 Server running on port {port}")
+
     app.run(
         host="0.0.0.0",
-        port=5000,
-        debug=False,          # 🔥 important
+        port=port,
+        debug=False,          # 🔥 correct
         use_reloader=False   # 🔥 VERY important
     )
