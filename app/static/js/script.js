@@ -1,122 +1,142 @@
-document.addEventListener('DOMContentLoaded', function() {
-  // Dark mode toggle
+document.addEventListener('DOMContentLoaded', () => {
+
+  // ===============================
+  // ELEMENTS
+  // ===============================
+  const feeds = Array.from(document.querySelectorAll('video[id^="feed"]'));
+  const globalStatusText = document.getElementById('global-status-text');
+  const globalStatusMsg = document.getElementById('global-status-msg');
   const themeToggle = document.getElementById('theme-toggle');
+
+  // ===============================
+  // DARK MODE TOGGLE
+  // ===============================
   if (themeToggle) {
-    themeToggle.addEventListener('click', function() {
+    themeToggle.addEventListener('click', () => {
       document.body.classList.toggle('dark-mode');
-      
-      // Update icon
-      const icon = this.querySelector('i');
+
+      const icon = themeToggle.querySelector('i');
       if (document.body.classList.contains('dark-mode')) {
         icon.classList.replace('fa-moon', 'fa-sun');
       } else {
         icon.classList.replace('fa-sun', 'fa-moon');
       }
-      
-      // Save preference
-      localStorage.setItem('darkMode', document.body.classList.contains('dark-mode'));
     });
-    
-    // Initialize from saved preference
-    if (localStorage.getItem('darkMode') === 'true') {
-      document.body.classList.add('dark-mode');
-      themeToggle.querySelector('i').classList.replace('fa-moon', 'fa-sun');
-    }
   }
-  
-  // Add to DOMContentLoaded event
-const statusSocket = new WebSocket(`ws://${window.location.host}/ws/status`);
 
-statusSocket.onmessage = function(event) {
-    const data = JSON.parse(event.data);
-    
-    // Update threat status
-    if (data.threat_detected) {
-        document.querySelector('#feed1 .status').textContent = 'THREAT DETECTED';
-        document.querySelector('#feed1 .status').className = 'status danger';
-    }
-    
-    // Update timestamps
-    document.querySelectorAll('.feed-footer').forEach(el => {
-        el.textContent = data.timestamp;
-    });
-};
-
-  // Update timestamps every minute
-  function updateTimestamps() {
+  // ===============================
+  // TIME UPDATE (BOTTOM RIGHT)
+  // ===============================
+  function updateTime() {
     const now = new Date();
-    const timeString = now.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+    const time = now.toLocaleTimeString([], {
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+
     document.querySelectorAll('.feed-footer').forEach(el => {
-      el.textContent = timeString;
+      el.textContent = time;
     });
   }
-  
-  setInterval(updateTimestamps, 60000);
-  updateTimestamps(); // Initial update
 
-  // --- Multimodal analysis integration ---
-  // Collect feed video elements and map to friendly ids
-  const feeds = Array.from(document.querySelectorAll('video[id^="feed"]'));
-
+  // ===============================
+  // ANALYZE ONE FEED
+  // ===============================
   async function analyzeFeed(videoEl) {
+    const src =
+      videoEl.querySelector('source')?.getAttribute('src') ||
+      videoEl.getAttribute('src');
+
+    if (!src) return false;
+
+    const videoPath = src.replace(/^\/?static\//, '');
+
     try {
-      // Extract the static video path used by the backend. url looks like '/static/videos/feed1.mp4'
-      const src = videoEl.querySelector('source')?.getAttribute('src') || videoEl.getAttribute('src');
-      if (!src) return;
-
-      // Normalize to a video_path accepted by the backend, relative to static (no leading /static/)
-      const rel = src.replace(/^\/?static\//, '').replace(/^\//, '').replace(/^static\//, '');
-
-      const resp = await fetch('/analyze_video', {
+      const res = await fetch('/analyze_video', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ video_path: rel })
+        body: JSON.stringify({ video_path: videoPath })
       });
 
-      if (!resp.ok) {
-        console.warn('analyze_video error', resp.statusText);
-        return;
-      }
+      if (!res.ok) return false;
 
-      const data = await resp.json();
+      const data = await res.json();
       const feedBox = videoEl.closest('.feed-box');
-      if (!feedBox) return;
-
       const statusEl = feedBox.querySelector('.status');
-      // Use priority: speech -> sound for message
+
+      // ===============================
+      // CAMERA STATUS + BLINK
+      // ===============================
       if (data.final_threat) {
         statusEl.textContent = 'THREAT DETECTED';
         statusEl.className = 'status danger';
-      } else if (data.speech_threat || data.sound_threat) {
-        statusEl.textContent = 'POTENTIAL THREAT';
-        statusEl.className = 'status danger';
+
+        // 🔔 blinking red border
+        feedBox.classList.add('threat');
+
+        return true;
       } else {
         statusEl.textContent = 'MONITORING';
         statusEl.className = 'status safe';
+
+        // remove blink
+        feedBox.classList.remove('threat');
       }
 
-      // Add or update a small transcription overlay inside the feed-box
-      let transEl = feedBox.querySelector('.transcription');
-      if (!transEl) {
-        transEl = document.createElement('div');
-        transEl.className = 'transcription';
-        transEl.style.cssText = 'position:absolute;left:8px;bottom:28px;background:rgba(0,0,0,0.6);color:#fff;padding:6px 8px;border-radius:4px;font-size:12px;max-width:90%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;';
+      // ===============================
+      // TRANSCRIPTION OVERLAY
+      // ===============================
+      let overlay = feedBox.querySelector('.transcription');
+      if (!overlay) {
+        overlay = document.createElement('div');
+        overlay.className = 'transcription';
+        overlay.style.cssText =
+          'position:absolute;bottom:30px;left:10px;background:rgba(0,0,0,0.65);color:#fff;padding:6px 10px;border-radius:5px;font-size:12px;max-width:90%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;';
         feedBox.style.position = 'relative';
-        feedBox.appendChild(transEl);
+        feedBox.appendChild(overlay);
       }
-      transEl.textContent = data.transcription ? data.transcription : (data.message || '');
+
+      overlay.textContent = data.transcription || '';
+
+      return false;
 
     } catch (err) {
-      console.error('analyzeFeed error', err);
+      console.error('Analysis error:', err);
+      return false;
     }
   }
 
-  // Run initial analysis and then poll periodically
-  function analyzeAllFeeds() {
-    feeds.forEach(v => analyzeFeed(v));
+  // ===============================
+  // ANALYZE ALL FEEDS
+  // ===============================
+  async function analyzeAllFeeds() {
+    let anyThreat = false;
+
+    for (const video of feeds) {
+      const threat = await analyzeFeed(video);
+      if (threat) anyThreat = true;
+    }
+
+    // ===============================
+    // GLOBAL STATUS
+    // ===============================
+    if (anyThreat) {
+      globalStatusText.textContent = 'ALERT';
+      globalStatusText.className = 'status danger';
+      globalStatusMsg.textContent = 'Crime detected in one or more cameras';
+    } else {
+      globalStatusText.textContent = 'MONITORING';
+      globalStatusText.className = 'status safe';
+      globalStatusMsg.textContent = 'All systems operational';
+    }
   }
 
+  // ===============================
+  // INIT
+  // ===============================
+  updateTime();
   analyzeAllFeeds();
-  // Poll every 20 seconds (adjust as needed)
-  setInterval(analyzeAllFeeds, 20000);
+
+  setInterval(updateTime, 60000);        // clock
+  setInterval(analyzeAllFeeds, 20000);  // AI polling
 });
