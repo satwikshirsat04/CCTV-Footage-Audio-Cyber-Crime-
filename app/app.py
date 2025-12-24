@@ -9,7 +9,6 @@ import ffmpeg
 import tensorflow as tf
 import soundfile as sf
 
-
 from transformers import (
     pipeline,
     VideoMAEImageProcessor,
@@ -36,66 +35,87 @@ SOUND_MODEL_PATH = os.path.join(MODELS_DIR, "sound_effects_cnn_model.keras")
 VISION_MODEL_NAME = "Nikeytas/videomae-crime-detector-ultra-v1"
 
 # ==================================================
-# LOAD MODELS (SAFE)
+# GLOBAL MODEL HANDLES (lazy)
 # ==================================================
 
-print("\n🔄 Loading models...")
-
-# Speech
-try:
-    speech_model = pickle.load(open(SPEECH_MODEL_PATH, "rb"))
-    vectorizer = pickle.load(open(VECTORIZER_PATH, "rb"))
-    print("✓ Speech + Vectorizer loaded")
-except:
-    speech_model, vectorizer = None, None
-    print("✗ Speech model disabled")
-
-# Sound
-try:
-    sound_model = tf.keras.models.load_model(
-        SOUND_MODEL_PATH,
-        compile=False,
-        safe_mode=False
-    )
-    print("✓ Sound CNN loaded")
-except:
-    sound_model = None
-    print("✗ Sound CNN disabled")
-
-# Whisper
-try:
-    whisper_pipe = pipeline(
-        "automatic-speech-recognition",
-        model="openai/whisper-tiny.en",
-        device=-1
-    )
-    print("✓ Whisper loaded")
-except:
-    whisper_pipe = None
-    print("✗ Whisper disabled")
-
-# Vision (CPU SAFE)
-try:
-    vision_processor = VideoMAEImageProcessor.from_pretrained(
-        VISION_MODEL_NAME,
-        do_rescale=False   # 🔥 prevents float64 blowup
-    )
-    vision_model = VideoMAEForVideoClassification.from_pretrained(
-        VISION_MODEL_NAME
-    )
-    vision_model.eval()
-    print("✓ Vision model loaded (VideoMAE)")
-except Exception as e:
-    vision_model = None
-    print("✗ Vision model disabled:", e)
+speech_model = vectorizer = None
+sound_model = None
+whisper_pipe = None
+vision_model = vision_processor = None
+MODELS_LOADED = False
 
 # ==================================================
-# VISION SETTINGS (CRITICAL)
+# LOAD MODELS (LAZY & RENDER SAFE)
+# ==================================================
+
+def load_models():
+    global MODELS_LOADED
+    global speech_model, vectorizer
+    global sound_model, whisper_pipe
+    global vision_model, vision_processor
+
+    if MODELS_LOADED:
+        return
+
+    print("\n🔄 Lazy loading models...")
+
+    # Speech
+    try:
+        speech_model = pickle.load(open(SPEECH_MODEL_PATH, "rb"))
+        vectorizer = pickle.load(open(VECTORIZER_PATH, "rb"))
+        print("✓ Speech model loaded")
+    except:
+        speech_model = vectorizer = None
+        print("✗ Speech disabled")
+
+    # Sound
+    try:
+        sound_model = tf.keras.models.load_model(
+            SOUND_MODEL_PATH,
+            compile=False,
+            safe_mode=False
+        )
+        print("✓ Sound CNN loaded")
+    except:
+        sound_model = None
+        print("✗ Sound disabled")
+
+    # Whisper
+    try:
+        whisper_pipe = pipeline(
+            "automatic-speech-recognition",
+            model="openai/whisper-tiny.en",
+            device=-1
+        )
+        print("✓ Whisper loaded")
+    except:
+        whisper_pipe = None
+        print("✗ Whisper disabled")
+
+    # Vision
+    try:
+        vision_processor = VideoMAEImageProcessor.from_pretrained(
+            VISION_MODEL_NAME,
+            do_rescale=False
+        )
+        vision_model = VideoMAEForVideoClassification.from_pretrained(
+            VISION_MODEL_NAME
+        )
+        vision_model.eval()
+        print("✓ Vision model loaded")
+    except Exception as e:
+        vision_model = None
+        print("✗ Vision disabled:", e)
+
+    MODELS_LOADED = True
+
+
+# ==================================================
+# VISION SETTINGS
 # ==================================================
 
 WINDOW_SECONDS = 2
-FRAMES_PER_WINDOW = 16        # ↓ from 16 (CPU safe)
-MAX_WINDOWS = 2              # cap to avoid OOM
+MAX_WINDOWS = 2
 VISION_CACHE = {}
 
 # ==================================================
@@ -113,32 +133,24 @@ def video_to_audio(video_path, out_audio):
         )
         return True
     except:
-        print("⚠️ No audio stream found")
         return False
 
 
 def extract_frames_window(cap, start_frame, fps):
     frames = []
     cap.set(cv2.CAP_PROP_POS_FRAMES, start_frame)
-
-    stride = max(int(fps // 8), 1)  # skip frames to reduce load
+    stride = max(int(fps // 8), 1)
 
     while len(frames) < 16:
         ret, frame = cap.read()
         if not ret:
             break
-
         frame = cv2.resize(frame, (224, 224))
         frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         frames.append(frame)
-
-        cap.set(
-            cv2.CAP_PROP_POS_FRAMES,
-            int(cap.get(cv2.CAP_PROP_POS_FRAMES)) + stride
-        )
+        cap.set(cv2.CAP_PROP_POS_FRAMES, int(cap.get(cv2.CAP_PROP_POS_FRAMES)) + stride)
 
     return frames
-
 
 
 def predict_vision_sliding(video_path):
@@ -154,28 +166,17 @@ def predict_vision_sliding(video_path):
 
     try:
         for w in range(MAX_WINDOWS):
-            cache_key = (video_path, w)
-            if cache_key in VISION_CACHE:
-                prob = VISION_CACHE[cache_key]
-            else:
-                start_frame = int(w * fps * WINDOW_SECONDS)
-                frames = extract_frames_window(cap, start_frame, fps)
+            start_frame = int(w * fps * WINDOW_SECONDS)
+            frames = extract_frames_window(cap, start_frame, fps)
+            if len(frames) < 4:
+                continue
 
-                if len(frames) < 4:
-                    continue
+            inputs = vision_processor(frames, return_tensors="pt")
+            with torch.no_grad():
+                outputs = vision_model(**inputs)
+                probs = torch.softmax(outputs.logits, dim=-1)
 
-                inputs = vision_processor(frames, return_tensors="pt")
-                with torch.no_grad():
-                    outputs = vision_model(**inputs)
-                    probs = torch.softmax(outputs.logits, dim=-1)
-
-                prob = float(probs[0][1])
-                VISION_CACHE[cache_key] = prob
-
-            max_prob = max(max_prob, prob)
-
-    except Exception as e:
-        print("⚠️ Vision inference safe-fail:", e)
+            max_prob = max(max_prob, float(probs[0][1]))
 
     finally:
         cap.release()
@@ -188,9 +189,7 @@ def predict_sound(audio_path):
         return 0.0, False
 
     y, sr = librosa.load(audio_path, sr=22050)
-    mel = librosa.feature.melspectrogram(y=y, sr=sr)
-    mel = librosa.power_to_db(mel)
-
+    mel = librosa.power_to_db(librosa.feature.melspectrogram(y=y, sr=sr))
     img = Image.fromarray(mel).resize((232, 231)).convert("RGB")
     arr = np.expand_dims(np.array(img) / 255.0, axis=0)
 
@@ -203,34 +202,29 @@ def predict_speech(audio_path):
         return "", False
 
     try:
-        # Load only first 25 seconds (prevents Whisper crash)
         y, sr = librosa.load(audio_path, sr=16000, duration=25)
+        tmp = audio_path.replace(".wav", "_short.wav")
+        sf.write(tmp, y, sr)
 
-        tmp_wav = audio_path.replace(".wav", "_short.wav")
-
-        # ✅ Correct way (librosa.output is removed)
-        sf.write(tmp_wav, y, sr)
-
-        result = whisper_pipe(tmp_wav)
-        text = result.get("text", "").strip()
-
+        text = whisper_pipe(tmp).get("text", "").strip()
         if not text:
             return "", False
 
         vec = vectorizer.transform([text])
-        pred = speech_model.predict(vec)[0]
+        return text, bool(speech_model.predict(vec)[0])
 
-        return text, bool(pred)
-
-    except Exception as e:
-        print("⚠️ Speech analysis failed:", e)
+    except:
         return "", False
-
 
 
 # ==================================================
 # ROUTES
 # ==================================================
+
+@app.route("/health")
+def health():
+    return "OK", 200
+
 
 @app.route("/")
 def index():
@@ -239,6 +233,8 @@ def index():
 
 @app.route("/analyze_video", methods=["POST"])
 def analyze_video():
+    load_models()  # 🔥 KEY LINE
+
     video_rel = request.json.get("video_path")
     video_path = os.path.join(BASE_DIR, "static", video_rel)
 
@@ -250,15 +246,13 @@ def analyze_video():
 
     try:
         has_audio = video_to_audio(video_path, audio_path)
-
-        vision_prob, vision_threat = predict_vision_sliding(video_path)
+        vision_prob, _ = predict_vision_sliding(video_path)
 
         if has_audio:
-            sound_prob, sound_threat = predict_sound(audio_path)
+            sound_prob, _ = predict_sound(audio_path)
             speech_text, speech_threat = predict_speech(audio_path)
         else:
-            sound_prob, sound_threat = 0.0, False
-            speech_text, speech_threat = "", False
+            sound_prob, speech_text, speech_threat = 0.0, "", False
 
         final_score = (
             0.55 * vision_prob +
@@ -267,17 +261,14 @@ def analyze_video():
         )
 
         return jsonify({
-            "vision_probability": vision_prob,
-            "sound_probability": sound_prob,
-            "speech_threat": speech_threat,
             "final_score": final_score,
             "final_threat": final_score >= 0.6,
-            "transcription": speech_text,
-            "message": "🚨 Crime Detected" if final_score >= 0.6 else "✅ Monitoring"
+            "transcription": speech_text
         })
 
     finally:
         shutil.rmtree(tmp, ignore_errors=True)
+
 
 # ==================================================
 # MAIN
@@ -285,12 +276,5 @@ def analyze_video():
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
-
     print(f"\n🚀 Server running on port {port}")
-
-    app.run(
-        host="0.0.0.0",
-        port=port,
-        debug=False,          # 🔥 correct
-        use_reloader=False   # 🔥 VERY important
-    )
+    app.run(host="0.0.0.0", port=port, debug=False, use_reloader=False)
