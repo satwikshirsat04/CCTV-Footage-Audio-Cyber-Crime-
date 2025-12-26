@@ -1,269 +1,388 @@
 from flask import Flask, request, jsonify, render_template
-import os
-import pickle
-import tempfile
-import shutil
+import os, pickle, tempfile, shutil, threading
 import numpy as np
 from PIL import Image
-import matplotlib
-matplotlib.use('Agg')
-import matplotlib.pyplot as plt
+import cv2
+import torch
 import librosa
 import ffmpeg
 import tensorflow as tf
 import soundfile as sf
-import traceback
-import cv2
-import torch
-import time
 
 from transformers import (
     pipeline,
     VideoMAEImageProcessor,
     VideoMAEForVideoClassification
 )
-from dotenv import load_dotenv
 
-# --------------------------------------------------
+# ==================================================
 # APP SETUP
-# --------------------------------------------------
+# ==================================================
 
-app = Flask(__name__, template_folder='templates', static_folder='static')
-
+app = Flask(__name__, template_folder="templates", static_folder="static")
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-ROOT = os.path.abspath(os.path.join(BASE_DIR, '..'))
 
-load_dotenv()
+# ==================================================
+# PATHS
+# ==================================================
 
-# --------------------------------------------------
-# MODEL PATHS
-# --------------------------------------------------
+MODELS_DIR = os.path.join(BASE_DIR, "models")
 
-MODELS_DIR = os.path.join(BASE_DIR, 'models')
-os.makedirs(MODELS_DIR, exist_ok=True)
+SPEECH_MODEL_PATH = os.path.join(MODELS_DIR, "cctv_audio_model.pkl")
+VECTORIZER_PATH = os.path.join(MODELS_DIR, "vectorizer.pkl")
+SOUND_MODEL_PATH = os.path.join(MODELS_DIR, "sound_effects_cnn_model.keras")
 
-SPEECH_MODEL_PATH = os.path.join(MODELS_DIR, 'cctv_audio_model.pkl')
-VECTORIZER_PATH = os.path.join(MODELS_DIR, 'vectorizer.pkl')
-SOUND_MODEL_PATH = os.path.join(MODELS_DIR, 'sound_effects_cnn_model.keras')
+# Updated Vision Model - UCF Crime Detection
+VISION_MODEL_NAME = "OPear/videomae-large-finetuned-UCF-Crime"
+# If you have local model on D drive, set this path:
+LOCAL_VISION_MODEL_PATH = "D:/models/videomae-large-finetuned-UCF-Crime"  # Adjust path as needed
 
-# --------------------------------------------------
-# LOAD MODELS
-# --------------------------------------------------
+# ==================================================
+# CRIME CLASSES (UCF-Crime Dataset)
+# ==================================================
 
-print("\n🔄 Loading models...")
+CRIME_CLASSES = {
+    0: "Abuse",
+    1: "Arrest", 
+    2: "Arson",
+    3: "Assault",
+    4: "Burglary",
+    5: "Explosion",
+    6: "Fighting",
+    7: "Normal Videos",
+    8: "Road Accidents",
+    9: "Robbery",
+    10: "Shooting",
+    11: "Shoplifting",
+    12: "Stealing",
+    13: "Vandalism"
+}
 
-# Speech model
-try:
-    speech_model = pickle.load(open(SPEECH_MODEL_PATH, 'rb'))
-    vectorizer = pickle.load(open(VECTORIZER_PATH, 'rb'))
-    print("✓ Speech + Vectorizer loaded")
-except Exception as e:
-    print("✗ Speech model load failed:", e)
-    speech_model, vectorizer = None, None
+# Non-crime class
+NON_CRIME_CLASS = 7  # "Normal Videos"
 
-# Sound CNN
+# ==================================================
+# GLOBALS (SAFE)
+# ==================================================
+
+speech_model = vectorizer = None
 sound_model = None
-try:
-    sound_model = tf.keras.models.load_model(SOUND_MODEL_PATH, compile=False)
-    print("✓ Sound CNN loaded")
-except Exception as e:
-    print("✗ Sound CNN load failed:", e)
+whisper_pipe = None
+vision_model = vision_processor = None
 
-# Whisper
-try:
-    whisper_pipe = pipeline(
-        "automatic-speech-recognition",
-        model="openai/whisper-tiny.en"
-    )
-    print("✓ Whisper loaded")
-except Exception as e:
-    whisper_pipe = None
-    print("✗ Whisper load failed:", e)
+MODELS_LOADED = False
+MODEL_LOCK = threading.Lock()
+INFERENCE_LOCK = threading.Lock()
 
-
-VISION_MODEL_PATH = os.path.join(
-    BASE_DIR,
-    "models",
-    "videomae-crime-detector-ultra-v1"
-)
-
-vision_processor = VideoMAEImageProcessor.from_pretrained(
-    VISION_MODEL_PATH,
-    local_files_only=True
-)
-
-vision_model = VideoMAEForVideoClassification.from_pretrained(
-    VISION_MODEL_PATH,
-    local_files_only=True
-)
-
-vision_model.eval()
-
-print("Vision model loaded from:", VISION_MODEL_PATH)
-
-# --------------------------------------------------
-# VISION CACHE
-# --------------------------------------------------
-
-vision_cache = {}  
-# key: (video_path, window_index) → probability
-
+# Limits (CRITICAL)
+MAX_VIDEO_SIZE_MB = 50
+MAX_VIDEO_FRAMES = 32
 WINDOW_SECONDS = 2
-FRAMES_PER_WINDOW = 16
+MAX_WINDOWS = 2
 
-# --------------------------------------------------
+# ==================================================
+# LAZY MODEL LOADER (THREAD SAFE)
+# ==================================================
+
+def load_models():
+    global MODELS_LOADED
+    global speech_model, vectorizer
+    global sound_model, whisper_pipe
+    global vision_model, vision_processor
+
+    if MODELS_LOADED:
+        return
+
+    with MODEL_LOCK:
+        if MODELS_LOADED:
+            return
+
+        print("\n🔄 Lazy loading models (once)...")
+
+        # Speech
+        try:
+            speech_model = pickle.load(open(SPEECH_MODEL_PATH, "rb"))
+            vectorizer = pickle.load(open(VECTORIZER_PATH, "rb"))
+            print("✓ Speech model loaded")
+        except:
+            speech_model = vectorizer = None
+            print("✗ Speech disabled")
+
+        # Sound
+        try:
+            sound_model = tf.keras.models.load_model(
+                SOUND_MODEL_PATH, compile=False, safe_mode=False
+            )
+            print("✓ Sound CNN loaded")
+        except:
+            sound_model = None
+            print("✗ Sound disabled")
+
+        # Whisper
+        try:
+            whisper_pipe = pipeline(
+                "automatic-speech-recognition",
+                model="openai/whisper-tiny.en",
+                device=-1
+            )
+            print("✓ Whisper loaded")
+        except:
+            whisper_pipe = None
+            print("✗ Whisper disabled")
+
+        # Vision - Try local first, then HuggingFace
+        try:
+            if os.path.exists(LOCAL_VISION_MODEL_PATH):
+                print(f"Loading vision model from local path: {LOCAL_VISION_MODEL_PATH}")
+                vision_processor = VideoMAEImageProcessor.from_pretrained(
+                    LOCAL_VISION_MODEL_PATH, do_rescale=False
+                )
+                vision_model = VideoMAEForVideoClassification.from_pretrained(
+                    LOCAL_VISION_MODEL_PATH
+                )
+            else:
+                print(f"Loading vision model from HuggingFace: {VISION_MODEL_NAME}")
+                vision_processor = VideoMAEImageProcessor.from_pretrained(
+                    VISION_MODEL_NAME, do_rescale=False
+                )
+                vision_model = VideoMAEForVideoClassification.from_pretrained(
+                    VISION_MODEL_NAME
+                )
+            
+            vision_model.eval()
+            print("✓ UCF-Crime Vision model loaded")
+        except Exception as e:
+            vision_model = None
+            print("✗ Vision disabled:", e)
+
+        MODELS_LOADED = True
+
+
+# ==================================================
 # HELPERS
-# --------------------------------------------------
+# ==================================================
 
-def extract_frames_window(video_path, start_sec, num_frames=16):
+def video_to_audio(video_path, out_audio):
+    try:
+        (
+            ffmpeg
+            .input(video_path)
+            .output(out_audio, ac=1, ar=16000, acodec="pcm_s16le")
+            .overwrite_output()
+            .run(quiet=True)
+        )
+        return True
+    except:
+        return False
+
+
+def extract_frames_uniform(video_path, num_frames=16):
+    """Extract frames uniformly from video for better detection"""
     cap = cv2.VideoCapture(video_path)
-    fps = cap.get(cv2.CAP_PROP_FPS)
-    start_frame = int(start_sec * fps)
-    cap.set(cv2.CAP_PROP_POS_FRAMES, start_frame)
-
+    if not cap.isOpened():
+        return []
+    
+    total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+    if total_frames < num_frames:
+        num_frames = max(total_frames, 1)
+    
+    indices = np.linspace(0, total_frames - 1, num_frames, dtype=int)
     frames = []
-    while len(frames) < num_frames:
+    
+    for idx in indices:
+        cap.set(cv2.CAP_PROP_POS_FRAMES, idx)
         ret, frame = cap.read()
-        if not ret:
-            break
-        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-        frames.append(frame)
-
+        if ret:
+            frame = cv2.resize(frame, (224, 224))
+            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            frames.append(frame)
+    
     cap.release()
     return frames
 
 
-def predict_vision_sliding(video_path):
+def predict_vision(video_path):
+    """Predict crime type using UCF-Crime model"""
     if vision_model is None:
-        return 0.0, False
+        return {
+            "crime_detected": False,
+            "crime_type": "Normal Videos",
+            "confidence": 0.0,
+            "all_probabilities": {}
+        }
 
-    cap = cv2.VideoCapture(video_path)
-    fps = cap.get(cv2.CAP_PROP_FPS)
-    total_frames = cap.get(cv2.CAP_PROP_FRAME_COUNT)
-    duration = total_frames / fps
-    cap.release()
+    try:
+        # Extract 16 frames uniformly
+        frames = extract_frames_uniform(video_path, num_frames=16)
+        
+        if len(frames) < 4:
+            return {
+                "crime_detected": False,
+                "crime_type": "Normal Videos",
+                "confidence": 0.0,
+                "all_probabilities": {}
+            }
 
-    max_prob = 0.0
-    window_idx = 0
+        # Process frames
+        inputs = vision_processor(frames, return_tensors="pt")
+        
+        with torch.no_grad():
+            outputs = vision_model(**inputs)
+            probs = torch.softmax(outputs.logits, dim=-1)[0]
+        
+        # Get predicted class
+        predicted_class_idx = torch.argmax(probs).item()
+        confidence = float(probs[predicted_class_idx])
+        crime_type = CRIME_CLASSES[predicted_class_idx]
+        
+        # Crime is detected if it's NOT "Normal Videos"
+        crime_detected = predicted_class_idx != NON_CRIME_CLASS
+        
+        # Get all probabilities for debugging
+        all_probs = {CRIME_CLASSES[i]: float(probs[i]) for i in range(len(CRIME_CLASSES))}
+        
+        return {
+            "crime_detected": crime_detected,
+            "crime_type": crime_type,
+            "confidence": confidence,
+            "all_probabilities": all_probs
+        }
+        
+    except Exception as e:
+        print(f"Vision prediction error: {e}")
+        return {
+            "crime_detected": False,
+            "crime_type": "Error",
+            "confidence": 0.0,
+            "all_probabilities": {}
+        }
 
-    for start in np.arange(0, duration, WINDOW_SECONDS):
-        cache_key = (video_path, window_idx)
 
-        if cache_key in vision_cache:
-            prob = vision_cache[cache_key]
-        else:
-            frames = extract_frames_window(video_path, start, FRAMES_PER_WINDOW)
-            if len(frames) < 8:
-                continue
+def predict_sound(audio_path):
+    if sound_model is None:
+        return 0.0
 
-            inputs = vision_processor(frames, return_tensors="pt")
-            with torch.no_grad():
-                outputs = vision_model(**inputs)
-                probs = torch.softmax(outputs.logits, dim=-1)
+    try:
+        y, sr = librosa.load(audio_path, sr=22050)
+        mel = librosa.power_to_db(librosa.feature.melspectrogram(y=y, sr=sr))
+        img = Image.fromarray(mel).resize((232, 231)).convert("RGB")
+        arr = np.expand_dims(np.array(img) / 255.0, axis=0)
 
-            prob = probs[0][1].item()  # violent class
-            vision_cache[cache_key] = prob
-
-        max_prob = max(max_prob, prob)
-        window_idx += 1
-
-    return max_prob, max_prob >= 0.75
-
-
-def video_to_audio(video_path, out_audio):
-    (
-        ffmpeg
-        .input(video_path)
-        .output(out_audio, ac=1, ar=16000, acodec='pcm_s16le')
-        .overwrite_output()
-        .run(quiet=True)
-    )
+        return float(np.max(sound_model.predict(arr, verbose=0)))
+    except:
+        return 0.0
 
 
 def predict_speech(audio_path):
     if whisper_pipe is None or speech_model is None:
         return "", False
 
-    text = whisper_pipe(audio_path)["text"]
-    vec = vectorizer.transform([text])
-    pred = speech_model.predict(vec)[0]
-    return text, bool(pred)
+    try:
+        y, sr = librosa.load(audio_path, sr=16000, duration=25)
+        tmp = audio_path.replace(".wav", "_short.wav")
+        sf.write(tmp, y, sr)
+
+        text = whisper_pipe(tmp).get("text", "").strip()
+        if not text:
+            return "", False
+
+        vec = vectorizer.transform([text])
+        return text, bool(speech_model.predict(vec)[0])
+    except:
+        return "", False
 
 
-def predict_sound(audio_path):
-    if sound_model is None:
-        return 0.0, False
-
-    y, sr = librosa.load(audio_path, sr=22050)
-    S = librosa.feature.melspectrogram(y=y, sr=sr, n_mels=128)
-    S_db = librosa.power_to_db(S, ref=np.max)
-
-    img = Image.fromarray(S_db).resize((232, 231)).convert("RGB")
-    arr = np.array(img) / 255.0
-    arr = np.expand_dims(arr, axis=0)
-
-    probs = sound_model.predict(arr, verbose=0)[0]
-    prob = float(np.max(probs))
-    return prob, prob >= 0.6
-
-# --------------------------------------------------
+# ==================================================
 # ROUTES
-# --------------------------------------------------
+# ==================================================
 
-@app.route('/')
+@app.route("/health")
+def health():
+    return "OK", 200
+
+
+@app.route("/")
 def index():
-    return render_template('index.html')
+    return render_template("index.html")
 
 
-@app.route('/analyze_video', methods=['POST'])
+@app.route("/analyze_video", methods=["POST"])
 def analyze_video():
-    data = request.json
-    video_rel = data.get("video_path")
+    load_models()
 
+    video_rel = request.json.get("video_path")
     video_path = os.path.join(BASE_DIR, "static", video_rel)
+
     if not os.path.exists(video_path):
         return jsonify({"error": "Video not found"}), 404
 
-    tmpdir = tempfile.mkdtemp()
-    audio_path = os.path.join(tmpdir, "audio.wav")
+    if os.path.getsize(video_path) / (1024 * 1024) > MAX_VIDEO_SIZE_MB:
+        return jsonify({"error": "Video too large"}), 400
 
-    try:
-        video_to_audio(video_path, audio_path)
+    with INFERENCE_LOCK:
+        tmp = tempfile.mkdtemp()
+        audio_path = os.path.join(tmp, "audio.wav")
 
-        # --- Predictions ---
-        vision_prob, vision_threat = predict_vision_sliding(video_path)
-        sound_prob, sound_threat = predict_sound(audio_path)
-        speech_text, speech_threat = predict_speech(audio_path)
+        try:
+            # Extract audio
+            has_audio = video_to_audio(video_path, audio_path)
+            
+            # Vision Analysis (NEW UCF-Crime Model)
+            vision_result = predict_vision(video_path)
 
-        # --- Fusion ---
-        final_score = (
-            0.55 * vision_prob +
-            0.25 * sound_prob +
-            0.20 * (1.0 if speech_threat else 0.0)
-        )
+            # Audio Analysis
+            if has_audio:
+                sound_prob = predict_sound(audio_path)
+                speech_text, speech_threat = predict_speech(audio_path)
+            else:
+                sound_prob, speech_text, speech_threat = 0.0, "", False
 
-        final_threat = final_score >= 0.6
+            # Multi-modal decision
+            # If vision detects specific crime with confidence > 0.3, trust it
+            # Otherwise use combined score
+            if vision_result["crime_detected"] and vision_result["confidence"] > 0.3:
+                final_threat = True
+                threat_reason = f"{vision_result['crime_type']} detected"
+            else:
+                # Fallback to multi-modal scoring
+                final_score = (
+                    0.55 * (1.0 if vision_result["crime_detected"] else 0.0) +
+                    0.25 * sound_prob +
+                    0.20 * (1.0 if speech_threat else 0.0)
+                )
+                final_threat = final_score >= 0.3
+                threat_reason = "Multi-modal threat detected" if final_threat else "Normal activity"
 
-        return jsonify({
-            "vision_probability": vision_prob,
-            "vision_threat": vision_threat,
-            "sound_probability": sound_prob,
-            "sound_threat": sound_threat,
-            "speech_threat": speech_threat,
-            "transcription": speech_text,
-            "final_score": final_score,
-            "final_threat": final_threat,
-            "message": "🚨 Crime Detected" if final_threat else "✅ Monitoring"
-        })
+            return jsonify({
+                # Vision details
+                "crime_type": vision_result["crime_type"],
+                "crime_confidence": vision_result["confidence"],
+                "vision_crime_detected": vision_result["crime_detected"],
+                
+                # Audio details
+                "sound_probability": sound_prob,
+                "speech_threat": speech_threat,
+                "transcription": speech_text,
+                
+                # Final decision
+                "final_threat": final_threat,
+                "threat_reason": threat_reason,
+                
+                # Debug info
+                "all_crime_probabilities": vision_result["all_probabilities"]
+            })
+        except Exception as e:
+            print(f"Analysis error: {e}")
+            return jsonify({"error": str(e)}), 500
+        finally:
+            shutil.rmtree(tmp, ignore_errors=True)
 
-    finally:
-        shutil.rmtree(tmpdir, ignore_errors=True)
 
-
-# --------------------------------------------------
+# ==================================================
 # MAIN
-# --------------------------------------------------
+# ==================================================
 
 if __name__ == "__main__":
-    print("\n🚀 Server running")
-    app.run(host="0.0.0.0", port=5000, debug=True)
+    port = int(os.environ.get("PORT", 5000))
+    print(f"\n🚀 Server running on port {port}")
+    app.run(host="0.0.0.0", port=port, debug=False, use_reloader=False)

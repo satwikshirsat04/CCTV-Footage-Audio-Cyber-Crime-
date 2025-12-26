@@ -271,7 +271,7 @@ def analyze_video():
                 "sound_probability": sound_prob,
                 "speech_threat": speech_threat,
                 "final_score": final_score,
-                "final_threat": final_score >= 0.6,
+                "final_threat": final_score >= 0.1,
                 "transcription": speech_text
             })
         finally:

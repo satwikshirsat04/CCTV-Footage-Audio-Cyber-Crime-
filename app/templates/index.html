@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <title>Multimodal Crime Detection System</title>
@@ -10,50 +11,50 @@
 </head>
 
 <body>
-<div class="container">
+    <div class="container">
 
-    <!-- SIDEBAR -->
-    <nav class="sidebar">
-        <h1>Crime Detection</h1>
-        <ul>
-            <li class="active"><i class="fas fa-home"></i> Home</li>
-            <li><i class="fas fa-video"></i> Live Feeds</li>
-            <li><i class="fas fa-clipboard-list"></i> Logs</li>
-            <li><i class="fas fa-cog"></i> Settings</li>
-            <li id="theme-toggle"><i class="fas fa-moon"></i> Dark Mode</li>
+        <!-- SIDEBAR -->
+        <nav class="sidebar">
+            <h1>Crime Detection</h1>
+            <ul>
+                <li class="active"><i class="fas fa-home"></i> Home</li>
+                <li><i class="fas fa-video"></i> Live Feeds</li>
+                <li><i class="fas fa-clipboard-list"></i> Logs</li>
+                <li><i class="fas fa-cog"></i> Settings</li>
+                <li id="theme-toggle"><i class="fas fa-moon"></i> Dark Mode</li>
 
-        </ul>
-    </nav>
+            </ul>
+        </nav>
 
-    <!-- MAIN CONTENT -->
-    <main class="content">
+        <!-- MAIN CONTENT -->
+        <main class="content">
 
-        <!-- LIVE FEEDS -->
-        <section class="live-feeds">
-            <h2>Live Camera Feeds</h2>
+            <!-- LIVE FEEDS -->
+            <section class="live-feeds">
+                <h2>Live Camera Feeds</h2>
 
-            <div class="feed-container">
+                <div class="feed-container">
 
-                {% for i in range(1,7) %}
-                <div class="feed-box">
-                    <div class="feed-header">
-                        <span>Camera {{ i }}</span>
-                        <span class="status safe" data-camera="feed{{ i }}">MONITORING</span>
+                    {% for i in range(1,7) %}
+                    <div class="feed-box">
+                        <div class="feed-header">
+                            <span>Camera {{ i }}</span>
+                            <span class="status safe" data-camera="feed{{ i }}">MONITORING</span>
+                        </div>
+
+                        <video id="feed{{ i }}" autoplay loop muted>
+                            <source src="{{ url_for('static', filename='videos/feed' ~ i ~ '.mp4') }}" type="video/mp4">
+                        </video>
+
+                        <div class="feed-footer">--:--</div>
                     </div>
+                    {% endfor %}
 
-                    <video id="feed{{ i }}" autoplay loop muted>
-                        <source src="{{ url_for('static', filename='videos/feed' ~ i ~ '.mp4') }}" type="video/mp4">
-                    </video>
-
-                    <div class="feed-footer">--:--</div>
                 </div>
-                {% endfor %}
+            </section>
 
-            </div>
-        </section>
-
-        <!-- THREAT OVERVIEW -->
-        <section class="threats-overview">
+            <!-- THREAT OVERVIEW -->
+            <!-- <section class="threats-overview">
             <h2>Threat Overview</h2>
 
             <div class="threats-container">
@@ -66,11 +67,37 @@
                     </div>
                 </div>
             </div>
-        </section>
+        </section> -->
 
-    </main>
-</div>
+            <!-- THREAT OVERVIEW -->
+            <section class="threats-overview">
+                <h2>Threat Overview</h2>
 
-<script src="{{ url_for('static', filename='js/script.js') }}"></script>
+                <div class="threats-container">
+                    <div class="threat-card">
+                        <div class="threat-header">
+                            <span class="status safe" id="global-status-text">MONITORING</span>
+                        </div>
+                        <div class="threat-content">
+                            <p id="global-status-msg">All systems operational</p>
+                            <div class="action-buttons">
+                                <button class="btn btn-small" id="refresh-btn">
+                                    <i class="fas fa-sync-alt"></i> Refresh Now
+                                </button>
+                                <button class="btn btn-small" id="export-btn">
+                                    <i class="fas fa-download"></i> Export Logs
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+
+        </main>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/script2.js') }}"></script>
 </body>
+
 </html>
