@@ -32,6 +32,14 @@ This project implements a **multimodal AI system** that detects crimes in CCTV f
 ![SPEECH MODEL](/app/assets/STT.jpeg)
 *Figure: Speech to Text Model Working*
 
+
+## Crime Detection Model Results:
+![SPEECH MODEL](/app/assets/crime_detected.png)
+*Figure: Crime Detection Model Working*
+
+---
+
+# 🛠️Training Sound Effect Model
 ## SOUND EFFECT DETECTION MODEL TRAINING:
 ![SPECTROGRAM](/CCTV%20Sound%20Threat/notebooks/spectrogram_crash1.png)  
 *Figure: Car Accident Crash CNN Processing with SPECTROGRAM TECHNIQUE*
@@ -43,6 +51,7 @@ This project implements a **multimodal AI system** that detects crimes in CCTV f
 ---
 ![SPECTROGRAM](/CCTV%20Sound%20Threat/spectrogram%20dataset/bomb/bomb1.png)  
 *Figure: Bomb Attack CNN Processing with SPECTROGRAM TECHNIQUE*
+
 
 ---
 
