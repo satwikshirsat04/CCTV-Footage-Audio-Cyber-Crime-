@@ -17,85 +17,154 @@
         <nav class="sidebar">
             <h1>Crime Detection</h1>
             <ul>
-                <li class="active"><i class="fas fa-home"></i> Home</li>
-                <li><i class="fas fa-video"></i> Live Feeds</li>
-                <li><i class="fas fa-clipboard-list"></i> Logs</li>
-                <li><i class="fas fa-cog"></i> Settings</li>
+                <li class="active" data-page="home"><i class="fas fa-home"></i> Home</li>
+                <li data-page="feeds"><i class="fas fa-video"></i> Live Feeds</li>
+                <li data-page="logs"><i class="fas fa-clipboard-list"></i> Logs</li>
+                <li data-page="settings"><i class="fas fa-cog"></i> Settings</li>
                 <li id="theme-toggle"><i class="fas fa-moon"></i> Dark Mode</li>
-
             </ul>
         </nav>
 
         <!-- MAIN CONTENT -->
         <main class="content">
 
-            <!-- LIVE FEEDS -->
-            <section class="live-feeds">
-                <h2>Live Camera Feeds</h2>
+            <!-- HOME PAGE -->
+            <div id="home-page" class="page active">
 
-                <div class="feed-container">
+                <!-- LIVE FEEDS -->
+                <section class="live-feeds">
+                    <h2>Live Camera Feeds</h2>
 
-                    {% for i in range(1,8) %}
-                    <div class="feed-box">
-                        <div class="feed-header">
-                            <span>Camera {{ i }}</span>
-                            <span class="status safe" data-camera="feed{{ i }}">MONITORING</span>
+                    <div class="feed-container">
+
+                        {% for i in range(1,8) %}
+                        <div class="feed-box">
+                            <div class="feed-header">
+                                <span>Camera {{ i }}</span>
+                                <span class="status safe" data-camera="feed{{ i }}">MONITORING</span>
+                            </div>
+
+                            <video id="feed{{ i }}" autoplay loop muted>
+                                <source src="{{ url_for('static', filename='videos/feed' ~ i ~ '.mp4') }}"
+                                    type="video/mp4">
+                            </video>
+
+                            <div class="feed-footer">--:--</div>
                         </div>
+                        {% endfor %}
 
-                        <video id="feed{{ i }}" autoplay loop muted>
-                            <source src="{{ url_for('static', filename='videos/feed' ~ i ~ '.mp4') }}" type="video/mp4">
-                        </video>
-
-                        <div class="feed-footer">--:--</div>
                     </div>
-                    {% endfor %}
+                </section>
 
-                </div>
-            </section>
+                <!-- THREAT OVERVIEW -->
+                <section class="threats-overview">
+                    <h2>Threat Overview</h2>
 
-            <!-- THREAT OVERVIEW -->
-            <!-- <section class="threats-overview">
-            <h2>Threat Overview</h2>
-
-            <div class="threats-container">
-                <div class="threat-card">
-                    <div class="threat-header">
-                        <span class="status safe" id="global-status-text">MONITORING</span>
-                    </div>
-                    <div class="threat-content">
-                        <p id="global-status-msg">All systems operational</p>
-                    </div>
-                </div>
-            </div>
-        </section> -->
-
-            <!-- THREAT OVERVIEW -->
-            <section class="threats-overview">
-                <h2>Threat Overview</h2>
-
-                <div class="threats-container">
-                    <div class="threat-card">
-                        <div class="threat-header">
-                            <span class="status safe" id="global-status-text">MONITORING</span>
-                        </div>
-                        <div class="threat-content">
-                            <p id="global-status-msg">All systems operational</p>
-                            <div class="action-buttons">
-                                <button class="btn btn-small" id="refresh-btn">
-                                    <i class="fas fa-sync-alt"></i> Refresh Now
-                                </button>
-                                <button class="btn btn-small" id="export-btn">
-                                    <i class="fas fa-download"></i> Export Logs
-                                </button>
+                    <div class="threats-container">
+                        <div class="threat-card">
+                            <div class="threat-header">
+                                <span class="status safe" id="global-status-text">MONITORING</span>
+                            </div>
+                            <div class="threat-content">
+                                <p id="global-status-msg">All systems operational</p>
+                                <div class="action-buttons">
+                                    <button class="btn btn-small" id="refresh-btn">
+                                        <i class="fas fa-sync-alt"></i> Refresh Now
+                                    </button>
+                                    <button class="btn btn-small" id="export-btn">
+                                        <i class="fas fa-download"></i> Export Logs
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
-            </section>
+                </section>
 
+            </div>
+
+            <!-- LIVE FEEDS PAGE -->
+            <div id="feeds-page" class="page">
+                <h2>Live Camera Feeds - Detailed View</h2>
+                <p style="text-align: center; color: #95a5a6; padding: 40px;">
+                    Go to Home to view all camera feeds
+                </p>
+            </div>
+
+            <!-- LOGS PAGE -->
+            <div id="logs-page" class="page">
+                <h2>Detection Logs</h2>
+
+                <div class="log-controls">
+                    <input type="text" id="log-search" placeholder="Search logs..." class="search-input">
+                    <select id="log-filter" class="filter-select">
+                        <option value="all">All Events</option>
+                        <option value="threats">Threats Only</option>
+                        <option value="normal">Normal Only</option>
+                    </select>
+                    <button class="btn btn-small" id="clear-logs-btn">
+                        <i class="fas fa-trash"></i> Clear Logs
+                    </button>
+                </div>
+
+                <div class="logs-container">
+                    <div class="log-entry-placeholder">
+                        <i class="fas fa-info-circle"></i>
+                        <p>No detection logs yet. Logs will appear here after video analysis.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SETTINGS PAGE -->
+            <div id="settings-page" class="page">
+                <h2>Settings</h2>
+
+                <div class="settings-grid">
+                    <div class="setting-card">
+                        <h3><i class="fas fa-bell"></i> Notifications</h3>
+                        <div class="setting-item">
+                            <label>
+                                <input type="checkbox" id="sound-alerts" checked>
+                                <span>Enable Sound Alerts</span>
+                            </label>
+                        </div>
+                        <div class="setting-item">
+                            <label>
+                                <input type="checkbox" id="desktop-notifications" checked>
+                                <span>Enable Desktop Notifications</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="setting-card">
+                        <h3><i class="fas fa-sync-alt"></i> Scan Interval</h3>
+                        <div class="setting-item">
+                            <label>Auto-scan every:</label>
+                            <select id="scan-interval">
+                                <option value="10000">10 seconds</option>
+                                <option value="20000" selected>20 seconds</option>
+                                <option value="30000">30 seconds</option>
+                                <option value="60000">1 minute</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="setting-card">
+                        <h3><i class="fas fa-sliders-h"></i> Detection Sensitivity</h3>
+                        <div class="setting-item">
+                            <label>Confidence Threshold: <span id="threshold-value">30%</span></label>
+                            <input type="range" id="confidence-threshold" min="0.1" max="0.9" step="0.1" value="0.3">
+                        </div>
+                    </div>
+                </div>
+            </div>
 
         </main>
     </div>
+
+    <!-- Alert Sound -->
+    <audio id="alert-sound" preload="auto">
+        <source src="data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj" type="audio/wav">
+    </audio>
 
     <script src="{{ url_for('static', filename='js/script2.js') }}"></script>
 </body>
